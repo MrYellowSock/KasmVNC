@@ -8,6 +8,9 @@
 #   1. Per-user YAML: ~/.kasmpasswd.d/username.yaml
 #   2. Global server parameters: -DLP_Region, -DLP_ClipSendMax, etc.
 #   3. Hardcoded defaults (all DLP features disabled)
+#
+# To reload configuration without disconnecting users:
+#   kasmvncpasswd -c
 
 # KasmVNC Per-User Configuration Example
 # Place this file at: ~/.kasmpasswd.d/<username>.yaml

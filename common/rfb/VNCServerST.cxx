@@ -904,6 +904,7 @@ void VNCServerST::writeUpdate()
 
   // Check if the password file was updated
   bool permcheck = false;
+  bool configReload = false;
   if (inotifyfd >= 0) {
     char buf[256];
     int ret = read(inotifyfd, buf, 256);
@@ -918,6 +919,7 @@ void VNCServerST::writeUpdate()
       }
 
       permcheck = true;
+      configReload = true;
 
       ret -= sizeof(struct inotify_event) - ev->len;
       pos += sizeof(struct inotify_event) - ev->len;
@@ -949,6 +951,8 @@ void VNCServerST::writeUpdate()
 
     if (permcheck)
       (*ci)->recheckPerms();
+    if (configReload)
+      (*ci)->flagReloadUserConfig();
 
     if (trackingFrameStats == network::GetAPIMessager::WANT_FRAME_STATS_ALL ||
         (trackingFrameStats == network::GetAPIMessager::WANT_FRAME_STATS_OWNER &&

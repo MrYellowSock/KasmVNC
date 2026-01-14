@@ -28,17 +28,19 @@
 #include <termios.h>
 #include <unistd.h>
 #include <wordexp.h>
-
 #include "kasmpasswd.h"
 
 static void usage(const char *prog)
 {
-  fprintf(stderr, "Usage: %s -u username [-wnod] [password_file]\n"
+  fprintf(stderr, "Usage: \n"
+                  " %s -u username [-rwnod] [password_file]\n"
+                  " %s -c\n"
                   "-r	Read permission\n"
                   "-w	Write permission\n"
                   "-o	Owner\n"
                   "-n	Don't change password, change permissions only\n"
                   "-d	Delete this user\n"
+                  "-c	Reload user config (signal server to reload)\n"
                   "\n"
                   "The password file is updated atomically.\n"
                   "For more information, run \"man vncpasswd\".\n\n"
@@ -120,10 +122,10 @@ int main(int argc, char** argv)
 {
   const char *fname = NULL;
   const char *user = NULL;
-  const char args[] = "u:rwnod";
+  const char args[] = "u:rwnodc";
   int opt;
 
-  unsigned char nopass = 0, reader = 0, writer = 0, owner = 0, deleting = 0;
+  unsigned char nopass = 0, reader = 0, writer = 0, owner = 0, deleting = 0, reloadconfig = 0;
 
   while ((opt = getopt(argc, argv, args)) != -1) {
     switch (opt) {
@@ -149,17 +151,15 @@ int main(int argc, char** argv)
       case 'd':
         deleting = 1;
       break;
+      case 'c':
+        reloadconfig = 1;
+      break;
       default:
         usage(argv[0]);
       break;
     }
   }
 
-  if (deleting && (nopass || reader || writer || owner))
-    usage(argv[0]);
-
-  if (!user)
-    usage(argv[0]);
 
   if (optind < argc)
     fname = argv[optind];
@@ -173,6 +173,26 @@ int main(int argc, char** argv)
   if (!fname)
     usage(argv[0]);
 
+  // Handle config reload (signal server to reload user configs)
+  if (reloadconfig) {
+    // Touch the reload signal file (create or update mtime)
+    FILE *f = fopen(fname, "a");
+    if (f) {
+      fclose(f);
+      printf("Config reload signal sent\n");
+      return 0;
+    } else {
+      fprintf(stderr, "Failed to signal config reload: %s\n", fname);
+      return 1;
+    }
+  }
+
+  if (deleting && (nopass || reader || writer || owner))
+    usage(argv[0]);
+
+  if (!user)
+    usage(argv[0]);
+  
   // Action
   struct kasmpasswd_t *set = readkasmpasswd(fname);
   unsigned i;

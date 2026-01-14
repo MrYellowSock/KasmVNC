@@ -123,6 +123,10 @@ namespace rfb {
         needsPermCheck = true;
     }
 
+    void flagReloadUserConfig() {
+        needsConfigReload = true;
+    }
+
     network::Socket* getSock() { return sock; }
     void add_changed(const Region& region) { updates.add_changed(region); }
     void add_changed_all() { updates.add_changed(server->pb->getRect()); }
@@ -245,6 +249,7 @@ namespace rfb {
     time_t connectionTime;
 
 
+    virtual void doReloadUserConfig();
     virtual void authSuccess();
     virtual void queryConnection(const char* userName);
     virtual void clientInit(bool shared);
@@ -348,6 +353,7 @@ namespace rfb {
     char user[USERNAME_LEN];
     char kasmpasswdpath[4096];
     bool needsPermCheck;
+    bool needsConfigReload;
 
     time_t lastEventTime;
     time_t pointerEventTime;

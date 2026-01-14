@@ -58,10 +58,8 @@ void DLPSettings::loadFromUserConfig(const UserConfig& config)
   DLP_ClipAcceptMax = config.DLP_ClipAcceptMax;
   DLP_ClipDelay = config.DLP_ClipDelay;
 
-  // Parse visual region if provided
-  if (!config.DLP_Region.empty()) {
-    parseRegion(config.DLP_Region.c_str());
-  }
+  parseRegion(config.DLP_Region.c_str());
+  
   regionAllowClick = config.DLP_RegionAllowClick;
   regionAllowRelease = config.DLP_RegionAllowRelease;
 }

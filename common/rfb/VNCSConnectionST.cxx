@@ -67,7 +67,7 @@ VNCSConnectionST::VNCSConnectionST(VNCServerST* server_, network::Socket *s,
     server(server_), updates(false),
     updateRenderedCursor(false), removeRenderedCursor(false),
     continuousUpdates(false), encodeManager(this, &VNCServerST::encCache),
-    needsPermCheck(false), pointerEventTime(0),
+    needsPermCheck(false), needsConfigReload(false), pointerEventTime(0),
     clientHasCursor(false),
     accessRights(AccessDefault), startTime(time(0)), frameTracking(false),
     udpFramesSinceFull(0), complainedAboutNoViewRights(false), clientUsername("username_unavailable"),
@@ -669,6 +669,26 @@ void VNCSConnectionST::approveConnectionOrClose(bool accept,
   }
 }
 
+void VNCSConnectionST::doReloadUserConfig()
+{
+  const char* username = clientUsername.empty() ? user : clientUsername.c_str();
+
+  UserConfig config;
+  config.loadFromFileOrGlobalDefaults(username, kasmpasswdpath);
+
+  // Reload all settings
+  dlpSettings.loadFromUserConfig(config);
+  keyboardSettings.loadFromUserConfig(config);
+  pointerSettings.loadFromUserConfig(config);
+
+  // Initialize per-user key remapper
+  if (!keyboardSettings.RemapKeys.empty()) {
+    keyRemapper.setMapping(keyboardSettings.RemapKeys.c_str());
+    vlog.info("Loaded per-user key remapping for user %s: %s", username, keyboardSettings.RemapKeys.c_str());
+  } // If remapKeys is empty, keyRemapper remains with empty mapping (no remapping)
+
+  vlog.info("load config successful for user: %s", clientUsername.c_str());
+}
 
 
 // -=- Callbacks from SConnection
@@ -703,23 +723,7 @@ void VNCSConnectionST::authSuccess()
     setUsername(get_default_name(sock->getPeerAddress()));
   }
 
-  // Load per-user DLP settings
-  const char* username = clientUsername.empty() ? user : clientUsername.c_str();
-
-  UserConfig config;
-  config.loadFromFileOrGlobalDefaults(username, kasmpasswdpath);
-  dlpSettings.loadFromUserConfig(config);
-  keyboardSettings.loadFromUserConfig(config);
-  pointerSettings.loadFromUserConfig(config);
-
-  // Initialize per-user key remapper
-  if (!keyboardSettings.RemapKeys.empty()) {
-    keyRemapper.setMapping(keyboardSettings.RemapKeys.c_str());
-    vlog.info("Loaded per-user key remapping for user %s: %s", username, keyboardSettings.RemapKeys.c_str());
-  }
-  // If remapKeys is empty, keyRemapper remains with empty mapping (no remapping)
-
-  vlog.info("Authentication successful for user: %s", clientUsername.c_str());
+  doReloadUserConfig();
 }
 
 void VNCSConnectionST::queryConnection(const char* userName)
@@ -1432,6 +1436,12 @@ void VNCSConnectionST::writeFramebufferUpdate()
     } else {
       accessRights |= AccessView;
     }
+  }
+
+  // Check for config reload request
+  if (needsConfigReload) {
+    needsConfigReload = false;
+	  doReloadUserConfig();
   }
 
   if (!(accessRights & AccessView)) {
