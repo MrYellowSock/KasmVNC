@@ -35,6 +35,7 @@ namespace rfb {
 
     // Key remapping
     std::string RemapKeys;      // Comma-separated remap string: "0x22->0x40,0x24<>0x41"
+    bool KeyboardAllowOnlyKeysInRemap;  // If true, only allow keys that are in the remap table
 
     /**
      * Constructor - Initializes all settings to safe defaults

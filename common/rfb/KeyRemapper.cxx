@@ -77,6 +77,11 @@ rdr::U32 KeyRemapper::remapKey(rdr::U32 key) const {
   return key;
 }
 
+bool KeyRemapper::hasMapping(rdr::U32 key) const {
+  os::AutoMutex a(mutex);
+  return mapping.find(key) != mapping.end();
+}
+
 
 class KeyMapParameter : public StringParameter {
 public:

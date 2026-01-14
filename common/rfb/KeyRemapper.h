@@ -32,6 +32,7 @@ namespace rfb {
     ~KeyRemapper();
     void setMapping(const char* m);
     rdr::U32 remapKey(rdr::U32 key) const;
+    bool hasMapping(rdr::U32 key) const;
     static KeyRemapper defInstance;
   private:
     std::map<rdr::U32,rdr::U32> mapping;

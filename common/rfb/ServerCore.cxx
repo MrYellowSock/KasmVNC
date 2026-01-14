@@ -172,6 +172,10 @@ rfb::IntParameter rfb::Server::DLP_KeyRateLimit
 ("DLP_KeyRateLimit",
  "Reject keyboard presses over this many per second",
  0, 0, INT_MAX);
+rfb::BoolParameter rfb::Server::KeyboardAllowOnlyKeysInRemap
+("KeyboardAllowOnlyKeysInRemap",
+ "If true, only allow keys that have explicit remap mappings",
+ false);
 rfb::BoolParameter rfb::Server::PointerAllowLeftClick
 ("PointerAllowLeftClick",
  "Allow left mouse button clicks",

@@ -30,6 +30,7 @@ KeyboardSettings::KeyboardSettings()
   // Initialize all settings to safe defaults
   DLP_KeyRateLimit = 0;      // 0 = unlimited
   RemapKeys = "";     // empty = no remapping
+  KeyboardAllowOnlyKeysInRemap = false;
   acceptKeyEvents = false;
 }
 
@@ -37,5 +38,6 @@ void KeyboardSettings::loadFromUserConfig(const UserConfig& config)
 {
   DLP_KeyRateLimit = config.DLP_KeyRateLimit;
   RemapKeys = config.RemapKeys;
+  KeyboardAllowOnlyKeysInRemap = config.KeyboardAllowOnlyKeysInRemap;
   acceptKeyEvents = config.acceptKeyEvents;
 }

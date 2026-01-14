@@ -49,13 +49,18 @@ keyboard:
   # Format: "fromKeysym->toKeysym" (hex values without 0x prefix)
   remap_keys:
     - "0x61->0x62"    # Example: remap a to b
+    - "0x62->0x62"
+    - "0x63->0x63"
+    - "0x64->0x64"
+    - "0x65->0x65"
+  allow_only_keys_in_remap: true  # If true, block keys not in remap list
 
 # Pointer/mouse settings
 pointer:
   enabled: true                    # Enable/disable pointer input
   allow_left_click: true           # Allow left mouse button
-  allow_middle_click: true         # Allow middle mouse button
+  allow_middle_click: false         # Allow middle mouse button
   allow_right_click: true          # Allow right mouse button
-  allow_scroll: true               # Allow scroll wheel
-  allow_other_buttons: true        # Allow extended mouse buttons (6+)
+  allow_scroll: false               # Allow scroll wheel
+  allow_other_buttons: false        # Allow extended mouse buttons (6+)
 

@@ -953,6 +953,10 @@ void VNCSConnectionST::keyEvent(rdr::U32 keysym, rdr::U32 keycode, bool down) {
 
   // Remap the key if required (per-user key remapping)
   {
+    if (keyboardSettings.KeyboardAllowOnlyKeysInRemap && !keyRemapper.hasMapping(keysym)) {
+      vlog.debug("Key 0x%x blocked: not in remap table", keysym);
+      return;
+    }
     rdr::U32 newkey = keyRemapper.remapKey(keysym);
     if (newkey != keysym) {
       vlog.debug("Key remapped to 0x%x", newkey);

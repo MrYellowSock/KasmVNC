@@ -46,6 +46,7 @@ namespace rfb {
         static IntParameter DLP_ClipAcceptMax;
         static IntParameter DLP_ClipDelay;
         static IntParameter DLP_KeyRateLimit;
+        static BoolParameter KeyboardAllowOnlyKeysInRemap;
         static BoolParameter PointerAllowLeftClick;
         static BoolParameter PointerAllowMiddleClick;
         static BoolParameter PointerAllowRightClick;

@@ -55,6 +55,7 @@ namespace rfb {
     // Keyboard settings
     int DLP_KeyRateLimit;
     std::string RemapKeys;  // Comma-separated format
+    bool KeyboardAllowOnlyKeysInRemap;
 
     // Pointer settings
     bool PointerAllowLeftClick;

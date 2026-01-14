@@ -50,6 +50,7 @@ UserConfig::UserConfig()
   // Initialize all bools to false
   DLP_RegionAllowClick = false;
   DLP_RegionAllowRelease = false;
+  KeyboardAllowOnlyKeysInRemap = false;
   PointerAllowLeftClick = false;
   PointerAllowMiddleClick = false;
   PointerAllowRightClick = false;
@@ -154,6 +155,8 @@ bool UserConfig::loadFromFile(const char* username, const char* kasmpasswdDir)
           RemapKeys = remapNode.as<std::string>();
         }
       }
+      if (keyboard["allow_only_keys_in_remap"])
+        KeyboardAllowOnlyKeysInRemap = keyboard["allow_only_keys_in_remap"].as<bool>();
     }
 
     // Parse pointer section
@@ -193,6 +196,7 @@ void UserConfig::loadGlobalDefaults()
   DLP_ClipAcceptMax = Server::DLP_ClipAcceptMax;
   DLP_ClipDelay = Server::DLP_ClipDelay;
   DLP_KeyRateLimit = Server::DLP_KeyRateLimit;
+  KeyboardAllowOnlyKeysInRemap = Server::KeyboardAllowOnlyKeysInRemap;
   PointerAllowLeftClick = Server::PointerAllowLeftClick;
   PointerAllowMiddleClick = Server::PointerAllowMiddleClick;
   PointerAllowRightClick = Server::PointerAllowRightClick;
