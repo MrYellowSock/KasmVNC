@@ -57,4 +57,5 @@ pointer:
   allow_middle_click: true         # Allow middle mouse button
   allow_right_click: true          # Allow right mouse button
   allow_scroll: true               # Allow scroll wheel
+  allow_other_buttons: true        # Allow extended mouse buttons (6+)
 

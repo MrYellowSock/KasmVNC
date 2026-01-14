@@ -61,6 +61,7 @@ namespace rfb {
     bool PointerAllowMiddleClick;
     bool PointerAllowRightClick;
     bool PointerAllowScroll;
+    bool PointerAllowOtherButtons;
 
 	int acceptPointerEvents;
 	int acceptKeyEvents;

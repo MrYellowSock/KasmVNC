@@ -39,6 +39,7 @@ namespace rfb {
     bool PointerAllowMiddleClick;      // Allow middle mouse button (button 2)
     bool PointerAllowRightClick;       // Allow right mouse button (button 3)
     bool PointerAllowScroll;           // Allow scroll wheel (buttons 4-5 and scrollX/scrollY)
+    bool PointerAllowOtherButtons;     // Allow extended mouse buttons (6+)
 
     /**
      * Filter the button mask based on allowed buttons

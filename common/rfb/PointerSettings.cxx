@@ -33,6 +33,7 @@ PointerSettings::PointerSettings()
   PointerAllowMiddleClick = true;  // Middle click allowed by default
   PointerAllowRightClick = true;   // Right click allowed by default
   PointerAllowScroll = true;       // Scroll allowed by default
+  PointerAllowOtherButtons = true; // Extended buttons allowed by default
 }
 
 int PointerSettings::filterButtonMask(int buttonMask) const
@@ -59,6 +60,10 @@ int PointerSettings::filterButtonMask(int buttonMask) const
     // Clear scroll buttons (buttons 4 and 5)
     filteredMask &= ~0x18;
   }
+  if (!PointerAllowOtherButtons) {
+    // filter only known button.
+    filteredMask &= (0x01|0x02|0x04|0x18);
+  }
 
   return filteredMask;
 }
@@ -70,4 +75,5 @@ void PointerSettings::loadFromUserConfig(const UserConfig& config)
   PointerAllowMiddleClick = config.PointerAllowMiddleClick;
   PointerAllowRightClick = config.PointerAllowRightClick;
   PointerAllowScroll = config.PointerAllowScroll;
+  PointerAllowOtherButtons = config.PointerAllowOtherButtons;
 }

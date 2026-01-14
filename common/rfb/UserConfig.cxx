@@ -54,6 +54,7 @@ UserConfig::UserConfig()
   PointerAllowMiddleClick = false;
   PointerAllowRightClick = false;
   PointerAllowScroll = false;
+  PointerAllowOtherButtons = false;
 
   acceptPointerEvents = false;
   acceptKeyEvents = false;
@@ -168,6 +169,8 @@ bool UserConfig::loadFromFile(const char* username, const char* kasmpasswdDir)
         PointerAllowRightClick = pointer["allow_right_click"].as<bool>();
       if (pointer["allow_scroll"])
         PointerAllowScroll = pointer["allow_scroll"].as<bool>();
+      if (pointer["allow_other_buttons"])
+        PointerAllowOtherButtons = pointer["allow_other_buttons"].as<bool>();
     }
 
     vlog.info("Successfully loaded user config");
@@ -194,6 +197,7 @@ void UserConfig::loadGlobalDefaults()
   PointerAllowMiddleClick = Server::PointerAllowMiddleClick;
   PointerAllowRightClick = Server::PointerAllowRightClick;
   PointerAllowScroll = Server::PointerAllowScroll;
+  PointerAllowOtherButtons = Server::PointerAllowOtherButtons;
 
   // KeyboardRemapKeys is not set from globals - handled separately via KeyRemapper
   RemapKeys = "";

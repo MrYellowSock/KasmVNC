@@ -50,6 +50,7 @@ namespace rfb {
         static BoolParameter PointerAllowMiddleClick;
         static BoolParameter PointerAllowRightClick;
         static BoolParameter PointerAllowScroll;
+        static BoolParameter PointerAllowOtherButtons;
         static IntParameter DLP_WatermarkRepeatSpace;
         static IntParameter DLP_WatermarkFontSize;
         static IntParameter DLP_WatermarkTimeOffset;

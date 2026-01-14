@@ -188,6 +188,10 @@ rfb::BoolParameter rfb::Server::PointerAllowScroll
 ("PointerAllowScroll",
  "Allow mouse scroll wheel",
  true);
+rfb::BoolParameter rfb::Server::PointerAllowOtherButtons
+("PointerAllowOtherButtons",
+ "Allow extended mouse buttons (6+)",
+ true);
 
 rfb::StringParameter rfb::Server::DLP_ClipLog
 ("DLP_Log",
