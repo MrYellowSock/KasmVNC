@@ -30,7 +30,11 @@
 #include <map>
 
 #include <rfb/Congestion.h>
+#include <rfb/DLPSettings.h>
 #include <rfb/EncodeManager.h>
+#include <rfb/KeyboardSettings.h>
+#include <rfb/KeyRemapper.h>
+#include <rfb/PointerSettings.h>
 #include <rfb/SConnection.h>
 #include <rfb/Timer.h>
 #include <rfb/unixRelayLimits.h>
@@ -255,6 +259,8 @@ namespace rfb {
                                          int x, int y, int w, int h);
     virtual void handleClipboardAnnounce(bool available);
     virtual void handleClipboardAnnounceBinary(const unsigned num, const char mimes[][32]);
+    virtual void addBinaryClipboard(const char mime[], const rdr::U8 *data,
+                                    const rdr::U32 len, const rdr::U32 id);
     virtual void udpUpgrade(const char *resp);
     virtual void subscribeUnixRelay(const char *name);
     virtual void unixRelay(const char *name, const rdr::U8 *buf, const unsigned len);
@@ -364,6 +370,18 @@ namespace rfb {
     char unixRelaySubscriptions[MAX_UNIX_RELAYS][MAX_UNIX_RELAY_NAME_LEN];
     bool complainedAboutNoViewRights;
     std::string clientUsername;
+
+    // Per-user settings
+    DLPSettings dlpSettings;
+    KeyboardSettings keyboardSettings;
+    PointerSettings pointerSettings;
+
+    ManagedPixelBuffer* dlpFramebuffer;
+    KeyRemapper keyRemapper;
+
+    // DLP helper methods
+    void applyDLPRegion();
+    PixelBuffer* getFramebuffer();
   };
 }
 #endif

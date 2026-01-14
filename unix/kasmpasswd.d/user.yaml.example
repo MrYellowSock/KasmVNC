@@ -1,0 +1,60 @@
+# Example Per-User DLP (Data Loss Prevention) Configuration
+#
+# This file demonstrates how to configure DLP settings for individual users.
+# Copy this file to:
+#   ~/.kasmpasswd.d/username.yaml  (for user-specific settings)
+#
+# Configuration precedence:
+#   1. Per-user YAML: ~/.kasmpasswd.d/username.yaml
+#   2. Global server parameters: -DLP_Region, -DLP_ClipSendMax, etc.
+#   3. Hardcoded defaults (all DLP features disabled)
+
+# KasmVNC Per-User Configuration Example
+# Place this file at: ~/.kasmpasswd.d/<username>.yaml
+#
+# All settings are optional. If not specified, global server defaults are used.
+# Only configurations shown here are supported per-user.
+# Data Loss Prevention (DLP) settings
+data_loss_prevention:
+
+  # Visible region - restrict what area of the screen the user can see
+  # Coordinates can be absolute pixels or percentages (with % suffix)
+  visible_region:
+    left: "100"
+    top: "100"
+    right: "-100"       # 0 means no restriction on that edge
+    bottom: "-100"
+
+    # Controls for the concealed (blacked-out) region
+    concealed_region:
+      allow_click_down: false      # Allow mouse clicks in the hidden area
+      allow_click_release: true    # Allow mouse releases in the hidden area
+
+  # Keyboard settings under DLP
+  keyboard:
+    enabled: true                  # Enable/disable keyboard input
+    rate_limit: 0                  # Max key events per second (0 = unlimited)
+
+  # Clipboard settings
+  clipboard:
+    server_to_client:
+      size: 0                      # Max bytes to send to client (0 = unlimited)
+    client_to_server:
+      size: 0                      # Max bytes to accept from client (0 = unlimited)
+    delay_between_operations: 0    # Milliseconds between clipboard operations
+
+# Keyboard remapping
+keyboard:
+  # Remap keys - can be a comma-separated string or YAML array
+  # Format: "fromKeysym->toKeysym" (hex values without 0x prefix)
+  remap_keys:
+    - "0x61->0x62"    # Example: remap a to b
+
+# Pointer/mouse settings
+pointer:
+  enabled: true                    # Enable/disable pointer input
+  allow_left_click: true           # Allow left mouse button
+  allow_middle_click: true         # Allow middle mouse button
+  allow_right_click: true          # Allow right mouse button
+  allow_scroll: true               # Allow scroll wheel
+

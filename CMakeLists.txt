@@ -227,6 +227,12 @@ include_directories(${CMAKE_BINARY_DIR})
 
 include(cmake/StaticBuild.cmake)
 
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
+set(YAML_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(third_party)
 add_subdirectory(common)
 

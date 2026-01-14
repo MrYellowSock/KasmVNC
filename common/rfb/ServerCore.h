@@ -46,6 +46,10 @@ namespace rfb {
         static IntParameter DLP_ClipAcceptMax;
         static IntParameter DLP_ClipDelay;
         static IntParameter DLP_KeyRateLimit;
+        static BoolParameter PointerAllowLeftClick;
+        static BoolParameter PointerAllowMiddleClick;
+        static BoolParameter PointerAllowRightClick;
+        static BoolParameter PointerAllowScroll;
         static IntParameter DLP_WatermarkRepeatSpace;
         static IntParameter DLP_WatermarkFontSize;
         static IntParameter DLP_WatermarkTimeOffset;

@@ -172,6 +172,22 @@ rfb::IntParameter rfb::Server::DLP_KeyRateLimit
 ("DLP_KeyRateLimit",
  "Reject keyboard presses over this many per second",
  0, 0, INT_MAX);
+rfb::BoolParameter rfb::Server::PointerAllowLeftClick
+("PointerAllowLeftClick",
+ "Allow left mouse button clicks",
+ true);
+rfb::BoolParameter rfb::Server::PointerAllowMiddleClick
+("PointerAllowMiddleClick",
+ "Allow middle mouse button clicks",
+ true);
+rfb::BoolParameter rfb::Server::PointerAllowRightClick
+("PointerAllowRightClick",
+ "Allow right mouse button clicks",
+ true);
+rfb::BoolParameter rfb::Server::PointerAllowScroll
+("PointerAllowScroll",
+ "Allow mouse scroll wheel",
+ true);
 
 rfb::StringParameter rfb::Server::DLP_ClipLog
 ("DLP_Log",

@@ -7,7 +7,8 @@ OS_LIB=$(KASMVNC_BUILDDIR)/common/os/libos.la
 NETWORK_LIB=$(KASMVNC_BUILDDIR)/common/network/libnetwork.la
 XREGION_LIB=$(KASMVNC_BUILDDIR)/common/Xregion/libXregion.la
 UNIXCOMMON_LIB=$(KASMVNC_BUILDDIR)/unix/common/libunixcommon.la
-COMMON_LIBS=$(NETWORK_LIB) $(RFB_LIB) $(RDR_LIB) $(XREGION_LIB) $(OS_LIB) $(UNIXCOMMON_LIB)
+YAMLCPP_LIB=$(KASMVNC_BUILDDIR)/third_party/yaml-cpp/libyaml-cpp.a
+COMMON_LIBS=$(NETWORK_LIB) $(RFB_LIB) $(RDR_LIB) $(XREGION_LIB) $(OS_LIB) $(UNIXCOMMON_LIB) $(YAMLCPP_LIB)
 
 noinst_LTLIBRARIES = libvnccommon.la
 

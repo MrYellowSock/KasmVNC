@@ -19,7 +19,7 @@
  
 #include <network/GetAPI.h>
 #include <network/TcpSocket.h>
-
+#include <rfb/UserConfig.h>
 #include <rfb/ComparingUpdateTracker.h>
 #include <rfb/Encoder.h>
 #include <rfb/KeyRemapper.h>
@@ -70,7 +70,8 @@ VNCSConnectionST::VNCSConnectionST(VNCServerST* server_, network::Socket *s,
     needsPermCheck(false), pointerEventTime(0),
     clientHasCursor(false),
     accessRights(AccessDefault), startTime(time(0)), frameTracking(false),
-    udpFramesSinceFull(0), complainedAboutNoViewRights(false), clientUsername("username_unavailable")
+    udpFramesSinceFull(0), complainedAboutNoViewRights(false), clientUsername("username_unavailable"),
+    dlpFramebuffer(NULL)
 {
   setStreams(&sock->inStream(), &sock->outStream());
   peerEndpoint.buf = sock->getPeerEndpoint();
@@ -150,6 +151,12 @@ VNCSConnectionST::~VNCSConnectionST()
   server->clients.remove(this);
 
   delete [] fenceData;
+
+  // Clean up per-user DLP framebuffer
+  if (dlpFramebuffer) {
+    delete dlpFramebuffer;
+    dlpFramebuffer = NULL;
+  }
 
   if (server->apimessager) {
     server->apimessager->mainUpdateUserInfo(checkOwnerConn(), server->clients.size());
@@ -471,7 +478,7 @@ void VNCSConnectionST::sendBinaryClipboardDataOrClose(const char* mime,
   try {
     if (!(accessRights & AccessCutText)) return;
     if (!rfb::Server::sendCutText) return;
-    if (rfb::Server::DLP_ClipSendMax && len > (unsigned) rfb::Server::DLP_ClipSendMax) {
+    if (dlpSettings.DLP_ClipSendMax && len > (unsigned) dlpSettings.DLP_ClipSendMax) {
       vlog.info("DLP: client %s: refused to send binary clipboard, too large",
                 sock->getPeerAddress());
       return;
@@ -503,6 +510,19 @@ void VNCSConnectionST::getBinaryClipboardData(const char* mime, const unsigned c
   vlog.error("Binary clipboard data for mime %s not found", mime);
   *data = (const unsigned char *) "";
   *len = 1;
+}
+
+void VNCSConnectionST::addBinaryClipboard(const char mime[], const rdr::U8 *data,
+                                          const rdr::U32 len, const rdr::U32 id)
+{
+  // Check per-user clipboard accept limit
+  if (dlpSettings.DLP_ClipAcceptMax && len > (unsigned) dlpSettings.DLP_ClipAcceptMax) {
+    vlog.info("DLP: client %s: refused to receive binary clipboard, too large (%u > %d)",
+              sock->getPeerAddress(), len, dlpSettings.DLP_ClipAcceptMax);
+    return;
+  }
+
+  SConnection::addBinaryClipboard(mime, data, len, id);
 }
 
 void VNCSConnectionST::setDesktopNameOrClose(const char *name)
@@ -682,7 +702,24 @@ void VNCSConnectionST::authSuccess()
   {
     setUsername(get_default_name(sock->getPeerAddress()));
   }
-    vlog.info("Authentication successful for user: %s", clientUsername.c_str());
+
+  // Load per-user DLP settings
+  const char* username = clientUsername.empty() ? user : clientUsername.c_str();
+
+  UserConfig config;
+  config.loadFromFileOrGlobalDefaults(username, kasmpasswdpath);
+  dlpSettings.loadFromUserConfig(config);
+  keyboardSettings.loadFromUserConfig(config);
+  pointerSettings.loadFromUserConfig(config);
+
+  // Initialize per-user key remapper
+  if (!keyboardSettings.RemapKeys.empty()) {
+    keyRemapper.setMapping(keyboardSettings.RemapKeys.c_str());
+    vlog.info("Loaded per-user key remapping for user %s: %s", username, keyboardSettings.RemapKeys.c_str());
+  }
+  // If remapKeys is empty, keyRemapper remains with empty mapping (no remapping)
+
+  vlog.info("Authentication successful for user: %s", clientUsername.c_str());
 }
 
 void VNCSConnectionST::queryConnection(const char* userName)
@@ -782,7 +819,18 @@ void VNCSConnectionST::pointerEvent(const Point& pos, const Point& abspos, int b
     recheckPerms();
     return;
   }
-  if (!rfb::Server::acceptPointerEvents) return;
+
+  if (!pointerSettings.acceptPointerEvents) return;
+
+  // Filter button mask based on per-user settings
+  buttonMask = pointerSettings.filterButtonMask(buttonMask);
+
+  // Filter scroll events if scroll is disabled
+  if (!pointerSettings.PointerAllowScroll) {
+    scrollX = 0;
+    scrollY = 0;
+  }
+
   if (!server->pointerClient || server->pointerClient == this) {
     Point newpos = pos;
     if (pos.x & 0x4000) {
@@ -829,16 +877,18 @@ void VNCSConnectionST::pointerEvent(const Point& pos, const Point& abspos, int b
       server->pointerClient = 0;
 
     bool skipclick = false, skiprelease = false;
-    if (server->DLPRegion.enabled) {
+    if (dlpSettings.regionEnabled) {
       rdr::U16 x1, y1, x2, y2;
-      server->translateDLPRegion(x1, y1, x2, y2);
+      dlpSettings.translateRegion(x1, y1, x2, y2,
+                                  server->pb->width(),
+                                  server->pb->height());
 
       if (pos.x < x1 || pos.x >= x2 ||
           pos.y < y1 || pos.y >= y2) {
 
-          if (!Server::DLP_RegionAllowClick)
+          if (!dlpSettings.regionAllowClick)
             skipclick = true;
-          if (!Server::DLP_RegionAllowRelease)
+          if (!dlpSettings.regionAllowRelease)
             skiprelease = true;
       }
     }
@@ -879,12 +929,13 @@ void VNCSConnectionST::keyEvent(rdr::U32 keysym, rdr::U32 keycode, bool down) {
   lastEventTime = time(0);
   server->lastUserInputTime = lastEventTime;
   if (!(accessRights & AccessKeyEvents)) return;
-  if (!rfb::Server::acceptKeyEvents) return;
-  if (Server::DLP_KeyRateLimit > 0 && down &&
-      msSince(&lastKeyEvent) < (1000 / (unsigned) Server::DLP_KeyRateLimit)) {
-    vlog.info("DLP: client %s: refused keyboard event, too soon (%u ms vs %u)",
+  if (!keyboardSettings.acceptKeyEvents) return;
+
+  if (keyboardSettings.DLP_KeyRateLimit > 0 && down &&
+      msSince(&lastKeyEvent) < (1000 / (unsigned) keyboardSettings.DLP_KeyRateLimit)) {
+    vlog.info("Keyboard: client %s: refused keyboard event, too soon (%u ms vs %u)",
                sock->getPeerAddress(), msSince(&lastKeyEvent),
-               (1000 / (unsigned) Server::DLP_KeyRateLimit));
+               (1000 / (unsigned) keyboardSettings.DLP_KeyRateLimit));
     return;
   }
 
@@ -900,10 +951,9 @@ void VNCSConnectionST::keyEvent(rdr::U32 keysym, rdr::U32 keycode, bool down) {
       vlog.debug("Key released: 0x%x / 0x%x", keysym, keycode);
   }
 
-  // Remap the key if required
-  if (server->keyRemapper) {
-    rdr::U32 newkey;
-    newkey = server->keyRemapper->remapKey(keysym);
+  // Remap the key if required (per-user key remapping)
+  {
+    rdr::U32 newkey = keyRemapper.remapKey(keysym);
     if (newkey != keysym) {
       vlog.debug("Key remapped to 0x%x", newkey);
       keysym = newkey;
@@ -1570,7 +1620,7 @@ void VNCSConnectionST::writeDataUpdate()
                   server->msToNextUpdate() / 1000;
 
   if (!ui.is_empty()) {
-    encodeManager.writeUpdate(ui, server->getPixelBuffer(), cursor, maxUpdateSize);
+    encodeManager.writeUpdate(ui, getFramebuffer(), cursor, maxUpdateSize);
     copypassed.clear();
     gettimeofday(&lastRealUpdate, NULL);
     losslessTimer.start(losslessThreshold);
@@ -1614,7 +1664,7 @@ void VNCSConnectionST::writeDataUpdate()
 
 void VNCSConnectionST::writeBinaryClipboard()
 {
-  if (msSince(&lastClipboardOp) < (unsigned) rfb::Server::DLP_ClipDelay) {
+  if (msSince(&lastClipboardOp) < (unsigned) dlpSettings.DLP_ClipDelay) {
     vlog.info("DLP: client %s: refused to send binary clipboard, too soon",
               sock->getPeerAddress());
     return;
@@ -1916,4 +1966,78 @@ void VNCSConnectionST::sendUnixRelayData(const char name[], const unsigned char 
                                          const unsigned len)
 {
   writer()->writeUnixRelay(name, buf, len);
+}
+
+// Per-user DLP helper methods
+
+PixelBuffer* VNCSConnectionST::getFramebuffer()
+{
+  if (!dlpSettings.regionEnabled)
+    return server->pb;  // Return original framebuffer if DLP region not enabled
+
+  // Apply per-user DLP region (creates/updates dlpFramebuffer)
+  applyDLPRegion();
+  return dlpFramebuffer;
+}
+
+void VNCSConnectionST::applyDLPRegion()
+{
+  // This method creates a blacked-out framebuffer for this specific user
+  // based on their DLP region settings
+
+  if (!dlpSettings.regionEnabled) {
+    // Region not enabled, clean up framebuffer if it exists
+    if (dlpFramebuffer) {
+      delete dlpFramebuffer;
+      dlpFramebuffer = NULL;
+    }
+    return;
+  }
+
+  // Translate region coordinates to absolute pixels
+  rdr::U16 x1, y1, x2, y2;
+  dlpSettings.translateRegion(x1, y1, x2, y2,
+                              server->pb->width(),
+                              server->pb->height());
+
+  // Create or recreate framebuffer if dimensions changed
+  if (dlpFramebuffer &&
+      (dlpFramebuffer->width() != server->pb->width() ||
+       dlpFramebuffer->height() != server->pb->height())) {
+    delete dlpFramebuffer;
+    dlpFramebuffer = NULL;
+  }
+
+  if (!dlpFramebuffer) {
+    dlpFramebuffer = new ManagedPixelBuffer(server->pb->getPF(),
+                                            server->pb->width(),
+                                            server->pb->height());
+  }
+
+  // Copy original framebuffer data
+  int stride;
+  const rdr::U8 *src = server->pb->getBuffer(server->pb->getRect(), &stride);
+  rdr::U8 *data = dlpFramebuffer->getBufferRW(server->pb->getRect(), &stride);
+  stride *= 4;
+
+  memcpy(data, src, stride * server->pb->height());
+
+  // Black out areas outside the allowed region
+  rdr::U16 y;
+  const rdr::U16 w = server->pb->width();
+  const rdr::U16 h = server->pb->height();
+  for (y = 0; y < h; y++) {
+    if (y < y1 || y > y2) {
+      // This row is completely outside the region, black it out
+      memset(data, 0, stride);
+    } else {
+      // This row is within Y bounds, black out left and right portions
+      if (x1)
+        memset(data, 0, x1 * 4);
+      if (x2)
+        memset(&data[x2 * 4], 0, (w - x2) * 4);
+    }
+
+    data += stride;
+  }
 }

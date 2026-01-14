@@ -95,7 +95,7 @@ namespace rfb {
     virtual void setPixelBuffer(PixelBuffer* pb, const ScreenSet& layout);
     virtual void setPixelBuffer(PixelBuffer* pb);
     virtual void setScreenLayout(const ScreenSet& layout);
-    virtual PixelBuffer* getPixelBuffer() const { if (DLPRegion.enabled && blackedpb) return blackedpb; else return pb; }
+    virtual PixelBuffer* getPixelBuffer() const { return pb; }  // DLP filtering now per-user
     virtual void announceClipboard(bool available);
     virtual void clearBinaryClipboardData();
     virtual void sendBinaryClipboardData(const char* mime, const unsigned char *data,
@@ -224,7 +224,7 @@ namespace rfb {
     bool desktopStarted;
     int blockCounter;
     PixelBuffer* pb;
-    ManagedPixelBuffer *blackedpb;
+    // blackedpb removed - now per-user in VNCSConnectionST::dlpFramebuffer
     ScreenSet screenLayout;
     unsigned int ledState;
 
@@ -285,14 +285,7 @@ namespace rfb {
     rdr::U8 trackingFrameStats;
     char trackingClient[128];
 
-    struct {
-        bool enabled;
-        int x1, y1, x2, y2;
-        bool percents;
-        rdr::U16 pcx1, pcy1, pcx2, pcy2;
-    } DLPRegion;
-
-    void translateDLPRegion(rdr::U16 &x1, rdr::U16 &y1, rdr::U16 &x2, rdr::U16 &y2) const;
+    // DLP Region removed - now per-user in VNCSConnectionST::dlpSettings
 
     rdr::U32 clipboardId;
 

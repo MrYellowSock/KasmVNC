@@ -17,6 +17,7 @@ set(RFB_SOURCES
         Cursor.cxx
         DecodeManager.cxx
         Decoder.cxx
+        DLPSettings.cxx
         d3des.c
         EncCache.cxx
         EncodeManager.cxx
@@ -25,6 +26,7 @@ set(RFB_SOURCES
         HextileEncoder.cxx
         JpegCompressor.cxx
         JpegDecompressor.cxx
+        KeyboardSettings.cxx
         KeyRemapper.cxx
         LogWriter.cxx
         Logger.cxx
@@ -33,6 +35,7 @@ set(RFB_SOURCES
         Password.cxx
         PixelBuffer.cxx
         PixelFormat.cxx
+        PointerSettings.cxx
         RREEncoder.cxx
         RREDecoder.cxx
         RawDecoder.cxx
@@ -59,6 +62,7 @@ set(RFB_SOURCES
         TightWEBPEncoder.cxx
         TightQOIEncoder.cxx
         UpdateTracker.cxx
+		UserConfig.cxx
         VNCSConnectionST.cxx
         VNCServerST.cxx
         ZRLEEncoder.cxx
@@ -150,12 +154,13 @@ target_include_directories(rfb PRIVATE
         ${PNG_INCLUDE_DIR}
         ${CMAKE_SOURCE_DIR}/unix/kasmvncpasswd
         ${CMAKE_SOURCE_DIR}/third_party/tinyxml2
+        ${CMAKE_SOURCE_DIR}/third_party/yaml-cpp/include
         ${FFMPEG_INCLUDE_DIRS}
         ${TBB_INCLUDE_DIRS}
         ${CPUID_INCLUDE_DIRS}
 )
 
-target_link_libraries(rfb PUBLIC ${RFB_LIBRARIES} tinyxml2_objs ${TBB_LIBRARIES} ${CPUID_LIBRARIES})
+target_link_libraries(rfb PUBLIC ${RFB_LIBRARIES} tinyxml2_objs yaml-cpp ${TBB_LIBRARIES} ${CPUID_LIBRARIES})
 
 if (UNIX)
     libtool_create_control_file(rfb)
