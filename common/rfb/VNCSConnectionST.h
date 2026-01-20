@@ -286,7 +286,7 @@ namespace rfb {
 
     bool isShiftPressed();
 
-    bool getPerms(bool &read, bool &write, bool &owner) const;
+    bool getPerms(bool &read, bool &write, bool &owner, bool *passwordChanged = nullptr) const;
 
     bool checkOwnerConn() const;
 
@@ -351,6 +351,7 @@ namespace rfb {
     struct timeval connStart;
 
     char user[USERNAME_LEN];
+    char storedPasswordHash[PASSWORD_LEN];  // Store password hash at auth time
     char kasmpasswdpath[4096];
     bool needsPermCheck;
     bool needsConfigReload;

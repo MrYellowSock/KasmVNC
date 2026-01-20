@@ -93,10 +93,27 @@ VNCSConnectionST::VNCSConnectionST(VNCServerST* server_, network::Socket *s,
   wordfree(&wexp);
 
   user[0] = '\0';
+  storedPasswordHash[0] = '\0';
   const char *at = strrchr(peerEndpoint.buf, '@');
   if (at && at - peerEndpoint.buf > 1 && at - peerEndpoint.buf < USERNAME_LEN) {
     memcpy(user, peerEndpoint.buf, at - peerEndpoint.buf);
     user[at - peerEndpoint.buf] = '\0';
+  }
+
+  // Store the password hash for later comparison on password change
+  // Initial password of this connection.
+  // getPerms() is called in many places, Having single initial value is safer.
+  if (user[0] && !disablebasicauth) {
+    struct kasmpasswd_t *set = readkasmpasswd(kasmpasswdpath);
+    for (unsigned i = 0; i < set->num; i++) {
+      if (!strcmp(set->entries[i].user, user)) {
+        strncpy(storedPasswordHash, set->entries[i].password, PASSWORD_LEN - 1);
+        storedPasswordHash[PASSWORD_LEN - 1] = '\0';
+        break;
+      }
+    }
+    free(set->entries);
+    free(set);
   }
 
   bool read, write, owner;
@@ -1299,9 +1316,12 @@ bool VNCSConnectionST::isShiftPressed()
   return false;
 }
 
-bool VNCSConnectionST::getPerms(bool &read, bool &write, bool &owner) const
+bool VNCSConnectionST::getPerms(bool &read, bool &write, bool &owner, bool *passwordChanged) const
 {
   bool found = false;
+  if (passwordChanged)
+    *passwordChanged = false;
+
   if (disablebasicauth) {
     // We're running without basicauth
     read = true;
@@ -1316,6 +1336,12 @@ bool VNCSConnectionST::getPerms(bool &read, bool &write, bool &owner) const
         read = set->entries[i].read;
         write = set->entries[i].write;
         owner = set->entries[i].owner;
+
+        // Check if password hash has changed
+        if (passwordChanged && storedPasswordHash[0] &&
+            strcmp(set->entries[i].password, storedPasswordHash) != 0) {
+          *passwordChanged = true;
+        }
 
         // Writer can always read
         if (write)
@@ -1418,10 +1444,15 @@ void VNCSConnectionST::writeFramebufferUpdate()
   if (needsPermCheck) {
     needsPermCheck = false;
 
-    bool read, write, owner, ret;
-    ret = getPerms(read, write, owner);
+    bool read, write, owner, passwordChanged = false;
+    bool ret = getPerms(read, write, owner, &passwordChanged);
     if (!ret) {
       close("User was deleted");
+      return;
+    }
+
+    if (passwordChanged) {
+      close("Password was changed");
       return;
     }
 
