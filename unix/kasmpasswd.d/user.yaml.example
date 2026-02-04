@@ -67,3 +67,10 @@ pointer:
   allow_scroll: false               # Allow scroll wheel
   allow_other_buttons: false        # Allow extended mouse buttons (6+)
 
+# User session settings
+# Controls how this user's connections interact with other clients.
+# Server will respect global setting security before user's, specified or not.
+user_session:
+  # session_type: shared             # "shared" or "exclusive" (exclusive = never shared)
+  new_session_disconnects_existing_exclusive_session: false
+

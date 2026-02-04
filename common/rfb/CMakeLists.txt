@@ -12,6 +12,7 @@ set(RFB_SOURCES
         CSecurityVncAuth.cxx
         ComparingUpdateTracker.cxx
         Configuration.cxx
+        ConnectionSettings.cxx
         ConnParams.cxx
         CopyRectDecoder.cxx
         Cursor.cxx

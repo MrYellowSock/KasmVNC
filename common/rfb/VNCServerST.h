@@ -248,6 +248,14 @@ namespace rfb {
     // - Check how many of the clients are authenticated.
     int authClientCount();
 
+    // - Check how many authenticated clients match the given username.
+    int authClientCountForUser(const std::string& username);
+
+    // - Close all authenticated clients matching the given username,
+    //   except the specified socket.
+    void closeClientsForUser(const char* reason, const std::string& username,
+                             network::Socket* except);
+
     bool needRenderedCursor();
     void startFrameClock();
     void stopFrameClock();

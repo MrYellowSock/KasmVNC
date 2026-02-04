@@ -30,6 +30,7 @@
 #include <map>
 
 #include <rfb/Congestion.h>
+#include <rfb/ConnectionSettings.h>
 #include <rfb/DLPSettings.h>
 #include <rfb/EncodeManager.h>
 #include <rfb/KeyboardSettings.h>
@@ -382,6 +383,7 @@ namespace rfb {
     DLPSettings dlpSettings;
     KeyboardSettings keyboardSettings;
     PointerSettings pointerSettings;
+    ConnectionSettings connectionSettings;
 
     ManagedPixelBuffer* dlpFramebuffer;
     KeyRemapper keyRemapper;

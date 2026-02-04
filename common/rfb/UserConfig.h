@@ -67,6 +67,10 @@ namespace rfb {
 	int acceptPointerEvents;
 	int acceptKeyEvents;
 
+    // Connection sharing settings
+    bool connectionNeverShared;
+    bool connectionDisconnectClients;
+
     /**
      * Constructor - Initializes all settings to empty/default values
      */

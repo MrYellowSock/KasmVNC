@@ -697,6 +697,7 @@ void VNCSConnectionST::doReloadUserConfig()
   dlpSettings.loadFromUserConfig(config);
   keyboardSettings.loadFromUserConfig(config);
   pointerSettings.loadFromUserConfig(config);
+  connectionSettings.loadFromUserConfig(config);
 
   // Initialize per-user key remapper
   if (!keyboardSettings.RemapKeys.empty()) {
@@ -759,9 +760,20 @@ void VNCSConnectionST::queryConnection(const char* userName)
   CharArray name; name.buf = sock->getPeerAddress();
   server->blHosts->clearBlackmark(name.buf);
 
-  // - Special case to provide a more useful error message
+  // Load per-user config early so connection settings are available
+  // for the shared/non-shared check below. Will be called again in
+  // authSuccess() which is safe (idempotent).
+  doReloadUserConfig();
+
+    // - Special case to provide a more useful error message
   if (rfb::Server::neverShared && !rfb::Server::disconnectClients &&
     server->authClientCount() > 0) {
+    approveConnection(false, "The server is already in use");
+    return;
+  }
+  // - If user make it through server wide check, do per-user check
+  if (connectionSettings.neverShared && !connectionSettings.disconnectClients &&
+    server->authClientCountForUser(clientUsername) > 0) {
     approveConnection(false, "The server is already in use");
     return;
   }
@@ -793,16 +805,23 @@ void VNCSConnectionST::clientInit(bool shared)
   lastEventTime = time(0);
   if (rfb::Server::alwaysShared || reverseConnection) shared = true;
   if (!(accessRights & AccessNonShared)) shared = true;
-  if (rfb::Server::neverShared) shared = false;
+  if (rfb::Server::neverShared || connectionSettings.neverShared) shared = false;
   if (!shared) {
-    if (rfb::Server::disconnectClients && (accessRights & AccessNonShared)) {
-      // - Close all the other connected clients
-      vlog.debug("non-shared connection - closing clients");
-      server->closeClients("Non-shared connection requested", getSock());
-    } else {
-      // - Refuse this connection if there are existing clients, in addition to
-      // this one
-      if (server->authClientCount() > 1) {
+    if (rfb::Server::neverShared) {
+      // Global neverShared - enforce against all clients
+      if (rfb::Server::disconnectClients && (accessRights & AccessNonShared)) {
+        vlog.debug("non-shared connection (global) - closing all clients");
+        server->closeClients("Non-shared connection requested", getSock());
+      } else if (server->authClientCount() > 1) {
+        close("Server is already in use");
+        return;
+      }
+    } else if (connectionSettings.neverShared) {
+      // Per-user neverShared - enforce against same user's clients only
+      if (connectionSettings.disconnectClients && (accessRights & AccessNonShared)) {
+        vlog.debug("non-shared connection (per-user) - closing clients for user %s", clientUsername.c_str());
+        server->closeClientsForUser("Non-shared connection requested", clientUsername, getSock());
+      } else if (server->authClientCountForUser(clientUsername) > 1) {
         close("Server is already in use");
         return;
       }

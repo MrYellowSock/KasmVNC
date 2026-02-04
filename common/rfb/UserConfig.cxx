@@ -59,6 +59,9 @@ UserConfig::UserConfig()
 
   acceptPointerEvents = false;
   acceptKeyEvents = false;
+
+  connectionNeverShared = false;
+  connectionDisconnectClients = true;
   // Strings are initialized to empty by default
 }
 
@@ -176,6 +179,17 @@ bool UserConfig::loadFromFile(const char* username, const char* kasmpasswdDir)
         PointerAllowOtherButtons = pointer["allow_other_buttons"].as<bool>();
     }
 
+    // Parse user_session section
+    if (config["user_session"]) {
+      YAML::Node session = config["user_session"];
+      if (session["session_type"]) {
+        std::string sessionType = session["session_type"].as<std::string>();
+        connectionNeverShared = (sessionType == "exclusive");
+      }
+      if (session["new_session_disconnects_existing_exclusive_session"])
+        connectionDisconnectClients = session["new_session_disconnects_existing_exclusive_session"].as<bool>();
+    }
+
     vlog.info("Successfully loaded user config");
     return true;
   } catch (const YAML::Exception& e) {
@@ -208,4 +222,7 @@ void UserConfig::loadGlobalDefaults()
 
   acceptPointerEvents = Server::acceptPointerEvents;
   acceptKeyEvents = Server::acceptKeyEvents;
+
+  connectionNeverShared = Server::neverShared;
+  connectionDisconnectClients = Server::disconnectClients;
 }

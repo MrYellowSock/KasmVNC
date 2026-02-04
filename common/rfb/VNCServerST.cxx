@@ -715,6 +715,28 @@ int VNCServerST::authClientCount() {
   return count;
 }
 
+int VNCServerST::authClientCountForUser(const std::string& username) {
+  int count = 0;
+  std::list<VNCSConnectionST*>::iterator ci;
+  for (ci = clients.begin(); ci != clients.end(); ci++) {
+    if ((*ci)->authenticated() && (*ci)->getUsername() == username)
+      count++;
+  }
+  return count;
+}
+
+void VNCServerST::closeClientsForUser(const char* reason,
+                                       const std::string& username,
+                                       network::Socket* except)
+{
+  std::list<VNCSConnectionST*>::iterator i, next_i;
+  for (i = clients.begin(); i != clients.end(); i = next_i) {
+    next_i = i; next_i++;
+    if ((*i)->getSock() != except && (*i)->getUsername() == username)
+      (*i)->close(reason);
+  }
+}
+
 inline bool VNCServerST::needRenderedCursor()
 {
   std::list<VNCSConnectionST*>::iterator ci;
