@@ -75,6 +75,7 @@
 #include <unistd.h>
 #include <wordexp.h>
 #include <filesystem>
+#include <map>
 #include <string_view>
 
 using namespace rfb;
@@ -128,6 +129,15 @@ VNCServerST::VNCServerST(const char* name_, SDesktop* desktop_)
     strncpy(kasmpasswdpath, wexp.we_wordv[0], 4096);
   kasmpasswdpath[4095] = '\0';
   wordfree(&wexp);
+
+  // Set up connection count file path
+  if (rfb::Server::connectionCountFile[0]) {
+    wordexp_t wexp2;
+    if (!wordexp(rfb::Server::connectionCountFile, &wexp2, WRDE_NOCMD)) {
+      connectionCountFilePath = wexp2.we_wordv[0];
+      wordfree(&wexp2);
+    }
+  }
 
   if (kasmpasswdpath[0] && access(kasmpasswdpath, R_OK) == 0) {
     // Set up a watch on the password file
@@ -1222,4 +1232,47 @@ void VNCServerST::notifyUserAction(const VNCSConnectionST* newConnection, std::s
   }
   logNotification.append( std::to_string(notificationsSent) + " clients");
   slog.info(logNotification.c_str());
+
+  writeConnectionCountFile();
+}
+
+void VNCServerST::writeConnectionCountFile()
+{
+  if (connectionCountFilePath.empty())
+    return;
+
+  // Build username -> count map
+  std::map<std::string, int> counts;
+  for (auto* client : clients) {
+    if (client->authenticated())
+      counts[client->getUsername()]++;
+  }
+
+  // Format JSON with timestamp
+  time_t now = time(nullptr);
+  char timeStr[32];
+  strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+
+  int total = 0;
+  std::string json = "{\"connectionCounts\":{";
+  bool first = true;
+  for (const auto& entry : counts) {
+    if (!first) json += ",";
+    first = false;
+    json += "\"" + entry.first + "\":" + std::to_string(entry.second);
+    total += entry.second;
+  }
+  json += "},\"lastUpdated\":\"" + std::string(timeStr) +
+          "\",\"totalConnections\":" + std::to_string(total) + "}";
+
+  // Atomic write: write to temp file then rename
+  std::string tempPath = connectionCountFilePath + ".tmp";
+  FILE* f = fopen(tempPath.c_str(), "w");
+  if (f) {
+    fprintf(f, "%s\n", json.c_str());
+    fclose(f);
+    rename(tempPath.c_str(), connectionCountFilePath.c_str());
+  } else {
+    slog.error("Failed to write connection count file: %s", tempPath.c_str());
+  }
 }

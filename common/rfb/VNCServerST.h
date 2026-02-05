@@ -256,6 +256,9 @@ namespace rfb {
     void closeClientsForUser(const char* reason, const std::string& username,
                              network::Socket* except);
 
+    void writeConnectionCountFile();
+    std::string connectionCountFilePath;
+
     bool needRenderedCursor();
     void startFrameClock();
     void stopFrameClock();

@@ -298,6 +298,12 @@ rfb::BoolParameter rfb::Server::requireUserConfig
  "in the kasmpasswd.d directory",
  false);
 
+rfb::StringParameter rfb::Server::connectionCountFile
+("ConnectionCountFile",
+ "Path to write per-user connection counts JSON for external monitoring. "
+ "Empty string disables the feature.",
+ "");
+
 rfb::StringParameter rfb::Server::publicIP
 ("publicIP",
  "The server's public IP, for UDP negotiation. If not set, will be queried via the internet.",
