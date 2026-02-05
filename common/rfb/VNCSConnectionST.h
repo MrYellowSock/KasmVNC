@@ -250,7 +250,7 @@ namespace rfb {
     time_t connectionTime;
 
 
-    virtual void doReloadUserConfig();
+    virtual bool doReloadUserConfig();
     virtual void authSuccess();
     virtual void queryConnection(const char* userName);
     virtual void clientInit(bool shared);

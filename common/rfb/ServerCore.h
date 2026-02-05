@@ -98,6 +98,7 @@ namespace rfb {
         static StringParameter benchmarkResults;
         static PresetParameter preferBandwidth;
         static IntParameter webpEncodingTime;
+        static BoolParameter requireUserConfig;
     };
 };
 

@@ -76,7 +76,7 @@ namespace rfb {
      */
     UserConfig();
 
-    void loadFromFileOrGlobalDefaults(const char* username, const char* kasmpasswdDir);
+    bool loadFromFileOrGlobalDefaults(const char* username, const char* kasmpasswdDir);
 
   private:
     /**

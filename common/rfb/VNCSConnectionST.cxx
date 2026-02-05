@@ -686,12 +686,12 @@ void VNCSConnectionST::approveConnectionOrClose(bool accept,
   }
 }
 
-void VNCSConnectionST::doReloadUserConfig()
+bool VNCSConnectionST::doReloadUserConfig()
 {
   const char* username = clientUsername.empty() ? user : clientUsername.c_str();
 
   UserConfig config;
-  config.loadFromFileOrGlobalDefaults(username, kasmpasswdpath);
+  bool hasUserConfig = config.loadFromFileOrGlobalDefaults(username, kasmpasswdpath);
 
   // Reload all settings
   dlpSettings.loadFromUserConfig(config);
@@ -706,6 +706,7 @@ void VNCSConnectionST::doReloadUserConfig()
   } // If remapKeys is empty, keyRemapper remains with empty mapping (no remapping)
 
   vlog.info("load config successful for user: %s", clientUsername.c_str());
+  return hasUserConfig;
 }
 
 
@@ -763,7 +764,10 @@ void VNCSConnectionST::queryConnection(const char* userName)
   // Load per-user config early so connection settings are available
   // for the shared/non-shared check below. Will be called again in
   // authSuccess() which is safe (idempotent).
-  doReloadUserConfig();
+  if(!doReloadUserConfig() && rfb::Server::requireUserConfig){
+    approveConnection(false, "No personal configuration found for user. But server requires one.");
+    return;
+  }
 
     // - Special case to provide a more useful error message
   if (rfb::Server::neverShared && !rfb::Server::disconnectClients &&
@@ -1491,7 +1495,10 @@ void VNCSConnectionST::writeFramebufferUpdate()
   // Check for config reload request
   if (needsConfigReload) {
     needsConfigReload = false;
-	  doReloadUserConfig();
+	if(!doReloadUserConfig() && rfb::Server::requireUserConfig){
+      close("No personal configuration found for user. But server requires one.");
+      return;
+    }
   }
 
   if (!(accessRights & AccessView)) {

@@ -65,13 +65,15 @@ UserConfig::UserConfig()
   // Strings are initialized to empty by default
 }
 
-void UserConfig::loadFromFileOrGlobalDefaults(const char* username, const char* kasmpasswdDir)
+bool UserConfig::loadFromFileOrGlobalDefaults(const char* username, const char* kasmpasswdDir)
 {
   loadGlobalDefaults();
 
   if (loadFromFile(username, kasmpasswdDir)) {
     vlog.info("Loaded per-user config for %s", username);
+    return true;
   }
+  return false;
 }
 
 bool UserConfig::loadFromFile(const char* username, const char* kasmpasswdDir)

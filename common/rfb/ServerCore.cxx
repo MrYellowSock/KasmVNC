@@ -292,6 +292,12 @@ rfb::StringParameter rfb::Server::kasmPasswordFile
  "Password file for BasicAuth, created with the kasmvncpasswd utility.",
  "~/.kasmpasswd");
 
+rfb::BoolParameter rfb::Server::requireUserConfig
+("RequireUserConfig",
+ "Reject connections from users who do not have a personal config file "
+ "in the kasmpasswd.d directory",
+ false);
+
 rfb::StringParameter rfb::Server::publicIP
 ("publicIP",
  "The server's public IP, for UDP negotiation. If not set, will be queried via the internet.",
